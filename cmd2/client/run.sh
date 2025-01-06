@@ -1,0 +1,1 @@
+go run main.go -id=mac01 -server=nat.zyytest.com
