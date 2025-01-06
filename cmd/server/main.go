@@ -25,11 +25,17 @@ func main() {
 	r := gin.Default()
 
 	r.POST("/register", func(c *gin.Context) {
-		id := c.PostForm("id")
-		address := c.PostForm("address")
+		var param struct {
+			ID      string `json:"id" form:"id"`
+			Address string `json:"address" form:"address"`
+		}
+		if err := c.BindJSON(&param); err != nil {
+			c.JSON(http.StatusNotFound, err.Error())
+			return
+		}
 
 		lock.Lock()
-		peers[id] = address
+		peers[param.ID] = param.Address
 		lock.Unlock()
 
 		c.JSON(http.StatusOK, gin.H{
@@ -45,15 +51,25 @@ func main() {
 		lock.Unlock()
 
 		if !exists {
-			c.JSON(http.StatusNotFound, gin.H{
-				"message": "Peer not found",
-			})
+			c.JSON(http.StatusNotFound, "peer not found")
 			return
 		}
 
 		c.JSON(http.StatusOK, gin.H{
 			"address": address,
 		})
+	})
+
+	r.GET("/all", func(c *gin.Context) {
+		var ids []string
+
+		lock.Lock()
+		for id := range peers {
+			ids = append(ids, id)
+		}
+		lock.Unlock()
+
+		c.JSON(http.StatusOK, ids)
 	})
 
 	r.Run(fmt.Sprintf(":%d", port))

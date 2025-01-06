@@ -42,6 +42,10 @@ func init() {
 	if err != nil {
 		panic("parse config failed: " + err.Error())
 	}
+	fmt.Printf(
+		"server: %s\nlocal port: %d\nlocal id: %s\n",
+		config.Server, config.LocalPort, config.LocalID,
+	)
 }
 
 func getExternalIP() (string, error) {
@@ -74,6 +78,7 @@ func register(id, address string) error {
 		"id":      id,
 		"address": address,
 	}
+	fmt.Println(data)
 	payload, _ := json.Marshal(data)
 
 	resp, err := http.Post(url, "application/json", bytes.NewBuffer(payload))

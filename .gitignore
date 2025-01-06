@@ -1,3 +1,7 @@
 go.mod
 go.sum
 config.json
+/cmd/server/server
+/cmd/server/server.exe
+/cmd/client/client
+/cmd/client/client.exe
