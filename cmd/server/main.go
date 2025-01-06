@@ -18,24 +18,26 @@ func init() {
 	flag.Parse()
 }
 
-var peers = make(map[string]string) // 存储 peer 的 NAT 信息
+type Peer struct {
+	ID      string `json:"id" form:"id"`
+	Address string `json:"address" form:"address"`
+}
+
+var cache = make(map[string]Peer) // 存储 peer 的 NAT 信息
 var lock sync.Mutex
 
 func main() {
 	r := gin.Default()
 
 	r.POST("/register", func(c *gin.Context) {
-		var param struct {
-			ID      string `json:"id" form:"id"`
-			Address string `json:"address" form:"address"`
-		}
-		if err := c.BindJSON(&param); err != nil {
+		var peer Peer
+		if err := c.BindJSON(&peer); err != nil {
 			c.JSON(http.StatusNotFound, err.Error())
 			return
 		}
 
 		lock.Lock()
-		peers[param.ID] = param.Address
+		cache[peer.ID] = peer
 		lock.Unlock()
 
 		c.JSON(http.StatusOK, gin.H{
@@ -47,7 +49,7 @@ func main() {
 		id := c.Query("id")
 
 		lock.Lock()
-		address, exists := peers[id]
+		peer, exists := cache[id]
 		lock.Unlock()
 
 		if !exists {
@@ -55,21 +57,18 @@ func main() {
 			return
 		}
 
-		c.JSON(http.StatusOK, gin.H{
-			"address": address,
-		})
+		c.JSON(http.StatusOK, peer)
 	})
 
 	r.GET("/all", func(c *gin.Context) {
-		var ids []string
-
+		var peers []Peer
 		lock.Lock()
-		for id := range peers {
-			ids = append(ids, id)
+		for _, peer := range cache {
+			peers = append(peers, peer)
 		}
 		lock.Unlock()
 
-		c.JSON(http.StatusOK, ids)
+		c.JSON(http.StatusOK, peers)
 	})
 
 	r.Run(fmt.Sprintf(":%d", port))
